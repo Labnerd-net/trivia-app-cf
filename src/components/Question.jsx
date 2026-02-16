@@ -1,9 +1,8 @@
-import { useEffect } from 'react';
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Button from 'react-bootstrap/Button'
-import { shuffleAnswers } from '../requests';
+import { shuffleAnswers, decodeHtml } from '../requests';
 
-export default function Question({ question}) {
+export default function Question({ question }) {
   const [showAnswers, setShowAnswers] = useState(false);
   const [shuffledAnswers, setShuffledAnswers] = useState([]);
 
@@ -12,26 +11,28 @@ export default function Question({ question}) {
     setShuffledAnswers(answers);
     setShowAnswers(false);
   }, [question]);
-  
+
   const toggleShowAnswer = () => {
     setShowAnswers(!showAnswers)
   };
 
   return (
-    <div>
+    <div className="mb-4">
       <div className="fs-4 fw-bold lead">
-        <div dangerouslySetInnerHTML={{ __html: question.question }} />
+        {decodeHtml(question.question)}
       </div>
-      <Button variant="primary" onClick={toggleShowAnswer}>
-        Toggle Answer
+      <Button variant="primary" onClick={toggleShowAnswer} className="my-2">
+        {showAnswers ? 'Hide Answer' : 'Show Answer'}
       </Button>
       <ul className="list-group my-3">
-        {shuffledAnswers.map((opt, index) => (
-          <li key={index}
-            className={`list-group-item list-group-item-action my-1 rounded-pill disabled 
-            ${opt === question.correct_answer && showAnswers ? 'bg-success border border-success text-white' : ''}`}
+        {shuffledAnswers.map((opt) => (
+          <li
+            key={opt}
+            className={`list-group-item list-group-item-action my-1 rounded-pill
+            ${opt === question.correct_answer && showAnswers ? 'bg-success border border-success text-white' : 'bg-secondary'}`}
+            aria-label={opt === question.correct_answer ? 'Correct answer' : 'Answer option'}
           >
-            <div dangerouslySetInnerHTML={{ __html: opt }} />
+            {decodeHtml(opt)}
           </li>
         ))}
       </ul>

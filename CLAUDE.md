@@ -1,0 +1,87 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+Trivia quiz application built with React and deployed to Cloudflare Workers. The app fetches trivia questions from the OpenTDB (Open Trivia Database) API and presents them to users with customizable categories, difficulties, and question types.
+
+## Development Commands
+
+### Local Development
+- `npm run dev` - Start Vite dev server on port 3000
+- `wrangler dev` - Run Cloudflare Workers local development environment
+
+### Building and Deployment
+- `npm run build` - Build production bundle with Vite
+- `npm run preview` - Preview production build locally (port 3000)
+- `npm run deploy` - Build and deploy to Cloudflare Workers
+- `wrangler deploy` - Deploy to Cloudflare without building
+
+### Code Quality
+- `npm run lint` - Run ESLint
+
+## Architecture
+
+### Deployment Model
+This is a **static Cloudflare Workers application**:
+- Static frontend assets (HTML, CSS, JS) are served directly from Cloudflare's edge
+- No custom Worker code - Cloudflare automatically handles static asset serving
+- The `wrangler.jsonc` config enables SPA routing for client-side navigation
+- All API calls go directly from the browser to OpenTDB (no backend proxy)
+
+### Frontend Stack
+- **Framework**: React 19 with React Router for client-side routing
+- **Build Tool**: Vite with `@cloudflare/vite-plugin` for Workers integration
+- **UI Library**: React Bootstrap for components and styling
+- **HTTP Client**: Axios for API requests
+
+### Application Flow
+1. **App Initialization** (`App.jsx`):
+   - On mount, requests a session token from OpenTDB API
+   - Token prevents duplicate questions during the session
+   - Manages global state for token and selected category
+
+2. **Menu Page** (`src/pages/Menu.jsx`):
+   - Fetches available trivia categories from OpenTDB
+   - User selects category, difficulty, and question type
+   - Navigates to `/quiz/:categoryID/:difficulty/:type/`
+
+3. **Quiz Page** (`src/pages/Quiz.jsx`):
+   - Constructs OpenTDB API URL using route parameters and token
+   - Fetches 10 questions per page
+   - Renders questions using `Question` component
+   - Supports pagination (fetch next 10 questions)
+
+4. **Question Component** (`src/components/Question.jsx`):
+   - Displays individual question with shuffled answers
+   - Handles answer selection and scoring
+
+### API Integration
+All external API calls go to OpenTDB:
+- **Token Request**: `https://opentdb.com/api_token.php?command=request`
+- **Categories**: `https://opentdb.com/api_category.php`
+- **Questions**: `https://opentdb.com/api.php?amount=10&category={id}&difficulty={level}&type={type}&token={token}`
+- **Category Counts**: `https://opentdb.com/api_count.php?category={id}`
+
+Helper functions in `src/requests.js` handle URL construction and response formatting.
+
+### State Management
+Simple prop drilling pattern:
+- `token` state lives in `App.jsx`, passed to `Quiz` component
+- `category` state managed via `setCategory` callback passed to `Menu` component
+- Local component state for forms, loading, and errors
+
+### Cloudflare Workers Configuration
+- **No custom Worker code**: Pure static asset serving
+- **Assets**: Static files served with SPA fallback (`not_found_handling: "single-page-application"`)
+- **Custom Domain**: Configured for `trivia-app.labnerd.net`
+- **Observability**: Enabled for monitoring
+
+## Key Files
+- `wrangler.jsonc` - Cloudflare Workers configuration (no custom worker code needed)
+- `src/App.jsx` - Root component with token management and routing
+- `src/requests.js` - OpenTDB API helpers and utilities
+- `src/pages/Menu.jsx` - Category/difficulty/type selection form
+- `src/pages/Quiz.jsx` - Question display and pagination
+- `vite.config.js` - Vite configuration with Cloudflare plugin
