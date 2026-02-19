@@ -102,7 +102,6 @@ const triviaAPIProvider = {
     if (difficulty && difficulty !== 'all') {
       url += `&difficulties=${difficulty}`;
     }
-    // The Trivia API doesn't support type filtering the same way
 
     const response = await axios.get(url, { signal });
 
@@ -113,7 +112,7 @@ const triviaAPIProvider = {
         incorrectAnswers: q.incorrectAnswers,
         category: q.category,
         difficulty: q.difficulty,
-        type: q.type === 'Multiple Choice' ? 'multiple' : 'boolean'
+        type: 'multiple'
       }))
     };
   },
@@ -126,70 +125,7 @@ const triviaAPIProvider = {
   ],
 
   types: [
-    { value: "all", label: "Any type" },
-  ],
-};
-
-// ============================================================================
-// JSERVICE (JEOPARDY) PROVIDER
-// ============================================================================
-const jServiceProvider = {
-  id: 'jservice',
-  name: 'jService (Jeopardy!)',
-  description: '221,510+ questions from the TV show',
-  requiresToken: false,
-
-  async getToken() {
-    return null; // No token needed
-  },
-
-  async getCategories() {
-    // jService has thousands of categories, we'll use popular ones
-    // You could fetch from https://jservice.io/api/categories?count=100
-    const response = await axios.get('https://jservice.io/api/categories?count=50');
-    return response.data.map(cat => ({
-      id: cat.id.toString(),
-      name: cat.title
-    }));
-  },
-
-  async getQuestions({ amount = 10, categoryId, signal }) {
-    let url = `https://jservice.io/api/clues?count=${amount}`;
-
-    if (categoryId && categoryId !== 'all') {
-      url = `https://jservice.io/api/category?id=${categoryId}`;
-    }
-
-    const response = await axios.get(url, { signal });
-
-    // jService returns different formats depending on endpoint
-    let clues = categoryId && categoryId !== 'all'
-      ? response.data.clues
-      : response.data;
-
-    // Filter out invalid questions
-    clues = clues.filter(q => q && q.question && q.answer);
-
-    return {
-      results: clues.slice(0, amount).map(q => ({
-        question: q.question,
-        correctAnswer: q.answer,
-        incorrectAnswers: [], // Jeopardy doesn't have multiple choice
-        category: q.category?.title || 'Unknown',
-        difficulty: q.value >= 800 ? 'hard' : q.value >= 400 ? 'medium' : 'easy',
-        type: 'jeopardy', // Special type for Jeopardy format
-        airdate: q.airdate,
-        value: q.value
-      }))
-    };
-  },
-
-  difficulties: [
-    { value: "all", label: "Any difficulty" },
-  ],
-
-  types: [
-    { value: "all", label: "Jeopardy! format" },
+    { value: "multiple", label: "Multiple Choice" },
   ],
 };
 
@@ -199,13 +135,11 @@ const jServiceProvider = {
 export const providers = {
   opentdb: openTDBProvider,
   triviaapi: triviaAPIProvider,
-  jservice: jServiceProvider,
 };
 
 export const providerList = [
   { id: 'opentdb', name: 'Open Trivia Database', icon: '📚' },
   { id: 'triviaapi', name: 'The Trivia API', icon: '🎯' },
-  { id: 'jservice', name: 'Jeopardy!', icon: '🎮' },
 ];
 
 export function getProvider(id) {

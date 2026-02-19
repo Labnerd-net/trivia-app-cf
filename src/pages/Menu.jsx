@@ -66,7 +66,7 @@ export default function Menu({ setCategory, provider, onProviderChange }) {
 
   const startQuiz = (event) => {
     event.preventDefault()
-    const chosenCategory = categories.find((cat) => Number(cat.id) === Number(formData.category));
+    const chosenCategory = categories.find((cat) => cat.id === formData.category);
     setCategory(chosenCategory);
     navigate(`/quiz/${formData.category}/${formData.difficulty}/${formData.type}/`)
   }
